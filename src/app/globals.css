@@ -1,0 +1,118 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Palet Umira: teal #0A6079 → #02475A (utama), tembaga #8B4A1C / #A8622C (aksen) */
+@layer base {
+  :root {
+    --background: 195 33% 98%;
+    --foreground: 195 60% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 195 60% 12%;
+    --muted: 192 30% 94%;
+    --muted-foreground: 194 16% 42%;
+    --border: 193 24% 88%;
+    --input: 193 24% 84%;
+    --ring: 193 85% 26%;
+    --primary: 193 85% 26%;          /* #0A6079 */
+    --primary-foreground: 0 0% 100%;
+    --accent: 25 59% 42%;            /* #A8622C */
+    --accent-foreground: 0 0% 100%;
+    --sidebar: 193 96% 18%;          /* #02475A */
+    --sidebar-foreground: 190 40% 94%;
+    --sidebar-muted: 193 60% 24%;
+    --destructive: 0 72% 48%;
+    --success: 152 60% 36%;
+    /* warna seri chart (divalidasi CVD & kontras) */
+    --chart-1: #00809E;
+    --chart-2: #C46F2A;
+    color-scheme: light;
+  }
+  .dark {
+    --background: 193 55% 7%;        /* #071A20 */
+    --foreground: 190 30% 92%;
+    --card: 193 50% 10%;
+    --card-foreground: 190 30% 92%;
+    --muted: 193 40% 14%;
+    --muted-foreground: 192 15% 62%;
+    --border: 193 35% 18%;
+    --input: 193 35% 22%;
+    --ring: 192 55% 45%;
+    --primary: 192 55% 42%;          /* teal lebih terang agar kontras di gelap */
+    --primary-foreground: 0 0% 100%;
+    --accent: 26 55% 52%;            /* #C77B3E */
+    --accent-foreground: 0 0% 100%;
+    --sidebar: 193 60% 6%;
+    --sidebar-foreground: 190 30% 90%;
+    --sidebar-muted: 193 40% 13%;
+    --destructive: 0 65% 55%;
+    --success: 152 50% 45%;
+    --chart-1: #1D9DBD;
+    --chart-2: #CE7A35;
+    color-scheme: dark;
+  }
+
+  * { @apply border-border; }
+  html, body { height: 100%; }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: 'ss01', 'cv11';
+  }
+  ::selection { background: hsl(var(--accent) / 0.25); }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors
+      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background
+      disabled:pointer-events-none disabled:opacity-50;
+  }
+  .btn-primary { @apply btn bg-primary text-primary-foreground hover:bg-primary/90; }
+  .btn-accent { @apply btn bg-accent text-accent-foreground hover:bg-accent/90; }
+  .btn-outline { @apply btn border border-border bg-card hover:bg-muted; }
+  .btn-ghost { @apply btn hover:bg-muted; }
+  .btn-danger { @apply btn bg-destructive text-white hover:bg-destructive/90; }
+  .btn-icon { @apply inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-40; }
+  .input {
+    @apply w-full rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none transition
+      placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20;
+  }
+  .label { @apply mb-1.5 block text-sm font-medium; }
+  .card { @apply rounded-xl border border-border bg-card text-card-foreground shadow-sm; }
+  .badge { @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold; }
+  .table-base { @apply w-full text-left text-sm; }
+  .table-base th { @apply whitespace-nowrap border-b border-border px-3 py-2.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground; }
+  .table-base td { @apply border-b border-border/70 px-3 py-2.5 align-middle; }
+  .table-base tbody tr:hover { @apply bg-muted/50; }
+}
+
+/* Markdown jawaban AI */
+.prose-chat { @apply prose prose-sm max-w-none dark:prose-invert sm:prose-base; }
+.prose-chat { --tw-prose-links: hsl(var(--primary)); --tw-prose-bullets: hsl(var(--accent)); --tw-prose-counters: hsl(var(--accent)); }
+.prose-chat :where(p, li) { @apply leading-relaxed; }
+.prose-chat :where(code):not(:where(pre code)) {
+  @apply rounded bg-muted px-1.5 py-0.5 font-mono text-[0.85em] font-medium before:content-none after:content-none;
+}
+.prose-chat table { @apply block overflow-x-auto; }
+
+/* Highlight.js — tema mengikuti palet Umira */
+.hljs { color: #d6e7ec; }
+.hljs-keyword, .hljs-selector-tag, .hljs-built_in, .hljs-type { color: #6fc6db; }
+.hljs-string, .hljs-attr, .hljs-template-tag { color: #e3a571; }
+.hljs-number, .hljs-literal { color: #f0c39a; }
+.hljs-comment, .hljs-quote { color: #6c8a93; font-style: italic; }
+.hljs-title, .hljs-function .hljs-title, .hljs-title.function_ { color: #9fe0ef; }
+.hljs-variable, .hljs-params { color: #d6e7ec; }
+.hljs-meta, .hljs-symbol { color: #c77b3e; }
+
+/* Scrollbar halus */
+.scroll-thin { scrollbar-width: thin; scrollbar-color: hsl(var(--border)) transparent; }
+.sidebar-scroll { scrollbar-width: thin; scrollbar-color: hsl(var(--sidebar-muted)) transparent; }
+
+/* Ornamen bintang Umira (pola latar halaman login) */
+.umira-pattern {
+  background-image:
+    radial-gradient(circle at 20% 15%, rgba(168, 98, 44, 0.18), transparent 40%),
+    radial-gradient(circle at 85% 80%, rgba(14, 122, 149, 0.35), transparent 45%),
+    linear-gradient(160deg, #0A6079 0%, #02475A 55%, #05333F 100%);
+}

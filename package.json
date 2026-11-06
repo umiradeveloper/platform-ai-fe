@@ -1,0 +1,46 @@
+{
+  "name": "umira-ai-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p ${PORT:-3000}",
+    "build": "next build && node scripts/copy-standalone.mjs",
+    "start": "pm2 start ecosystem.config.cjs && pm2 save",
+    "start:node": "node .next/standalone/server.js",
+    "restart": "pm2 restart umira-web --update-env",
+    "stop": "pm2 stop umira-web",
+    "logs": "pm2 logs umira-web",
+    "update": "npm install && npm run build && npm run restart",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fontsource-variable/plus-jakarta-sans": "^5.1.0",
+    "@fontsource-variable/jetbrains-mono": "^5.1.0",
+    "clsx": "^2.1.1",
+    "highlight.js": "^11.10.0",
+    "lucide-react": "^0.468.0",
+    "next": "15.5.29",
+    "next-themes": "^0.4.4",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-markdown": "^9.0.1",
+    "recharts": "^2.15.0",
+    "rehype-highlight": "^7.0.1",
+    "remark-gfm": "^4.0.0",
+    "sonner": "^1.7.1",
+    "tailwind-merge": "^2.6.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/typography": "^0.5.15",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
