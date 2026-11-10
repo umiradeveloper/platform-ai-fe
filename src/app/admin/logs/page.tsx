@@ -21,6 +21,10 @@ const ACTION_LABEL: Record<string, string> = {
   'provider.update': 'Mengubah konfigurasi provider',
   'settings.update': 'Mengubah pengaturan sistem',
   'auth.password_reset': 'Reset password',
+  'auth.superapps_first_login': 'Login pertama akun SuperApps',
+  'auth.superapps_link': 'Akun lokal ditautkan ke SuperApps',
+  'auth.superapps_role_sync': 'Role disinkron dari SuperApps',
+  'auth.superapps_denied': 'Login SuperApps ditolak',
 };
 
 export default function LogsPage() {

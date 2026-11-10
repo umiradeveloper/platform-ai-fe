@@ -104,13 +104,27 @@ export default function ProfilePage() {
           <section className="card p-5">
             <h2 className="mb-4 text-sm font-bold">Profil</h2>
             <form onSubmit={saveProfile} className="grid gap-4 sm:grid-cols-2">
-              <div><label className="label">Nama</label><input className="input" value={name} onChange={(e) => setName(e.target.value)} minLength={2} required /></div>
+              <div><label className="label">Nama</label><input className="input disabled:opacity-70" value={name} onChange={(e) => setName(e.target.value)} minLength={2} required disabled={user?.authSource === 'SUPERAPPS'} title={user?.authSource === 'SUPERAPPS' ? 'Nama mengikuti SuperApps' : undefined} /></div>
               <div><label className="label">Email</label><input className="input opacity-70" value={user?.email ?? ''} disabled /></div>
               <div className="flex items-center gap-3 text-sm"><span className="font-medium">Tampilan:</span><ThemeToggle className="btn-outline py-1.5 text-xs" /></div>
-              <div className="flex justify-end sm:col-span-1"><button className="btn-primary" disabled={busy === 'profile'}>{busy === 'profile' && <Spinner />} Simpan</button></div>
+              <div className="flex justify-end sm:col-span-1">
+                {user?.authSource === 'SUPERAPPS' ? (
+                  <span className="self-center text-xs text-muted-foreground">Nama mengikuti SuperApps</span>
+                ) : (
+                  <button className="btn-primary" disabled={busy === 'profile'}>{busy === 'profile' && <Spinner />} Simpan</button>
+                )}
+              </div>
             </form>
           </section>
 
+          {user?.authSource === 'SUPERAPPS' ? (
+            <section className="card p-5 text-sm">
+              <h2 className="mb-2 text-sm font-bold">Akun SuperApps</h2>
+              <p className="text-muted-foreground">
+                Anda masuk dengan akun SuperApps{user.externalRole ? <> (role <b className="text-foreground">{user.externalRole}</b>)</> : null}. Password dan role dikelola di aplikasi SuperApps.
+              </p>
+            </section>
+          ) : (
           <section className="card p-5">
             <h2 className="mb-4 text-sm font-bold">Ubah password</h2>
             <form onSubmit={changePassword} className="grid gap-4 sm:grid-cols-2">
@@ -119,6 +133,7 @@ export default function ProfilePage() {
               <div className="flex justify-end sm:col-span-2"><button className="btn-outline" disabled={busy === 'pw'}>{busy === 'pw' && <Spinner />} Ubah password</button></div>
             </form>
           </section>
+          )}
         </div>
       </div>
     </div>

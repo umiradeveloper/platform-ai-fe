@@ -12,6 +12,7 @@ import { fmtCompact, fmtDate, fmtUsd } from '@/lib/utils';
 interface AdminUser {
   id: string; name: string; email: string; role: 'USER' | 'ADMIN'; isActive: boolean; dailyTokenLimit: number | null;
   lastLoginAt: string | null; createdAt: string; conversations: number; tokens30d: number; cost30d: number;
+  authSource: 'LOCAL' | 'SUPERAPPS'; externalRole: string | null; externalUsername: string | null;
 }
 
 export default function UsersPage() {
@@ -52,7 +53,13 @@ export default function UsersPage() {
             <tbody>
               {data.map((u) => (
                 <tr key={u.id}>
-                  <td><div className="font-medium">{u.name}</div><div className="text-xs text-muted-foreground">{u.email}</div></td>
+                  <td>
+                    <div className="flex items-center gap-1.5 font-medium">
+                      {u.name}
+                      {u.authSource === 'SUPERAPPS' && <span className="badge bg-teal-100 text-teal-800 dark:bg-teal-900/60 dark:text-teal-200" title={`Role SuperApps: ${u.externalRole ?? '-'}`}>SuperApps</span>}
+                    </div>
+                    <div className="text-xs text-muted-foreground">{u.email}{u.externalRole ? ` · ${u.externalRole}` : ''}</div>
+                  </td>
                   <td>
                     <span className={u.role === 'ADMIN' ? 'badge bg-copper-100 text-copper-700 dark:bg-copper-900/50 dark:text-copper-200' : 'badge bg-muted text-muted-foreground'}>
                       {u.role === 'ADMIN' ? 'Admin' : 'User'}
@@ -90,17 +97,18 @@ function EditUser({ user, isSelf, onClose, onSave }: { user: AdminUser; isSelf: 
         onSubmit={async (e) => {
           e.preventDefault();
           setBusy(true);
-          await onSave({ name, role, dailyTokenLimit: limitMode === 'default' ? null : Number(limit) });
+          await onSave({ ...(user.authSource === 'SUPERAPPS' ? {} : { name, role }), dailyTokenLimit: limitMode === 'default' ? null : Number(limit) });
           setBusy(false);
         }}
       >
-        <div><label className="label">Nama</label><input className="input" value={name} onChange={(e) => setName(e.target.value)} /></div>
+        <div><label className="label">Nama</label><input className="input" value={name} disabled={user.authSource === 'SUPERAPPS'} onChange={(e) => setName(e.target.value)} /></div>
         <div>
           <label className="label">Role</label>
-          <select className="input" value={role} disabled={isSelf} onChange={(e) => setRole(e.target.value as AdminUser['role'])}>
+          <select className="input" value={role} disabled={isSelf || user.authSource === 'SUPERAPPS'} onChange={(e) => setRole(e.target.value as AdminUser['role'])}>
             <option value="USER">User</option>
             <option value="ADMIN">Administrator</option>
           </select>
+          {user.authSource === 'SUPERAPPS' && <p className="mt-1 text-xs text-muted-foreground">Role mengikuti SuperApps ({user.externalRole ?? '-'}).</p>}
         </div>
         <div>
           <label className="label">Batas token harian</label>

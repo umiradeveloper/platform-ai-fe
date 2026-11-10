@@ -17,6 +17,7 @@ function LoginForm() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [allowRegistration, setAllowRegistration] = useState(true);
+  const [superapps, setSuperapps] = useState(false);
   const next = params.get('next') || '/';
 
   useEffect(() => {
@@ -24,7 +25,10 @@ function LoginForm() {
   }, [ready, user, next, router]);
 
   useEffect(() => {
-    fetch(`${API_BASE}/public/config`).then((r) => r.json()).then((c) => setAllowRegistration(!!c.allowRegistration)).catch(() => undefined);
+    fetch(`${API_BASE}/public/config`).then((r) => r.json()).then((c) => {
+        setAllowRegistration(!!c.allowRegistration);
+        setSuperapps(!!c.superappsLogin);
+      }).catch(() => undefined);
   }, []);
 
   async function submit(e: React.FormEvent) {
@@ -41,16 +45,23 @@ function LoginForm() {
   }
 
   return (
-    <AuthShell title="Selamat datang kembali" subtitle="Masuk untuk melanjutkan percakapan Anda.">
+    <AuthShell
+      title="Selamat datang kembali"
+      subtitle={superapps ? 'Masuk dengan akun SuperApps Umira Anda (email atau username).' : 'Masuk untuk melanjutkan percakapan Anda.'}
+    >
       <form onSubmit={submit} className="space-y-4">
         <div>
-          <label className="label" htmlFor="email">Email</label>
-          <input id="email" type="email" autoComplete="email" required className="input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nama@umira.id" />
+          <label className="label" htmlFor="email">Email atau username</label>
+          <input id="email" type="text" autoComplete="username" autoCapitalize="none" spellCheck={false} required className="input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nama@umira.id" />
         </div>
         <div>
           <div className="flex items-center justify-between">
             <label className="label" htmlFor="password">Password</label>
-            <Link href="/forgot-password" className="mb-1.5 text-xs font-medium text-primary hover:underline">Lupa password?</Link>
+            {superapps ? (
+              <span className="mb-1.5 text-xs text-muted-foreground">Lupa password? Reset lewat SuperApps</span>
+            ) : (
+              <Link href="/forgot-password" className="mb-1.5 text-xs font-medium text-primary hover:underline">Lupa password?</Link>
+            )}
           </div>
           <input id="password" type="password" autoComplete="current-password" required className="input" value={password} onChange={(e) => setPassword(e.target.value)} />
         </div>
@@ -58,7 +69,14 @@ function LoginForm() {
           {busy && <Spinner />} Masuk
         </button>
       </form>
-      {allowRegistration && (
+      {superapps && (
+        <div className="mt-6 flex items-center gap-3 rounded-xl border border-border bg-muted/50 px-3.5 py-3 text-xs text-muted-foreground">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/umira-mark.png" alt="" className="h-6 w-6" />
+          <span>Akun yang sama dengan <b className="font-semibold text-foreground">SuperApps Umira</b>. Khusus karyawan internal yang sudah disetujui.</span>
+        </div>
+      )}
+      {allowRegistration && !superapps && (
         <p className="mt-6 text-center text-sm text-muted-foreground">
           Belum punya akun? <Link href="/register" className="font-semibold text-accent hover:underline">Daftar</Link>
         </p>

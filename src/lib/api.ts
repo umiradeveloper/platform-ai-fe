@@ -12,6 +12,8 @@ export interface User {
   email: string;
   role: 'USER' | 'ADMIN';
   createdAt: string;
+  authSource?: 'LOCAL' | 'SUPERAPPS';
+  externalRole?: string | null;
 }
 
 let accessToken: string | null = null;
@@ -91,12 +93,13 @@ export async function api<T = unknown>(path: string, init: RequestInit & { json?
   return r.json() as Promise<T>;
 }
 
-export async function login(email: string, password: string) {
+/** identifier = email atau username (akun SuperApps maupun akun lokal). */
+export async function login(identifier: string, password: string) {
   const r = await fetch(`${API_BASE}/auth/login`, {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ identifier, password }),
   });
   if (!r.ok) throw new ApiError(await errorMessage(r), r.status);
   const j = await r.json();
