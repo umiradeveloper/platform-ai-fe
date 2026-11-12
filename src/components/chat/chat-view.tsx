@@ -12,6 +12,7 @@ import { ChatEvent, streamChat } from '@/lib/stream';
 import { MessageView, UIMessage } from './message';
 import { ModelSelector } from './model-selector';
 import { PromptInput } from './prompt-input';
+import type { AttachmentRef } from '@/lib/synology';
 import { Spinner } from '@/components/ui/basics';
 
 const MODEL_KEY = 'umira.lastModel';
@@ -135,7 +136,10 @@ export function ChatView({ conversationId }: { conversationId?: string }) {
         setMessages((prev) => {
           const copy = [...prev];
           const lastUser = [...copy].reverse().find((m) => m.role === 'USER' && m.id.startsWith('tmp-'));
-          if (lastUser) lastUser.id = e.data.userMessageId;
+          if (lastUser) {
+            lastUser.id = e.data.userMessageId;
+            if (e.data.attachments?.length) lastUser.attachments = e.data.attachments;
+          }
           return copy;
         });
         patchLast((m) => ({ ...m, model: e.data.model }));
@@ -198,11 +202,16 @@ export function ChatView({ conversationId }: { conversationId?: string }) {
     }
   }
 
-  function send(text: string) {
+  function send(text: string, files: AttachmentRef[] = []) {
     // modelId boleh null (daftar model belum termuat) — backend memakai model default.
     if (modelId) localStorage.setItem(MODEL_KEY, modelId);
-    setMessages((prev) => [...prev, { id: `tmp-u-${Date.now()}`, role: 'USER', content: text }]);
-    run('/chat/completions/stream', { conversationId: convRef.current, content: text, modelId: modelId ?? undefined });
+    setMessages((prev) => [...prev, { id: `tmp-u-${Date.now()}`, role: 'USER', content: text, attachments: files }]);
+    run('/chat/completions/stream', {
+      conversationId: convRef.current,
+      content: text,
+      modelId: modelId ?? undefined,
+      synologyFiles: files.length ? files.map((f) => f.path) : undefined,
+    });
   }
 
   function regenerate() {

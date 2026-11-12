@@ -1,7 +1,7 @@
 import { ApiError, authFetch } from './api';
 
 export type ChatEvent =
-  | { event: 'meta'; data: { conversationId: string; userMessageId: string; model: ModelRef; regenerate?: boolean } }
+  | { event: 'meta'; data: { conversationId: string; userMessageId: string; model: ModelRef; regenerate?: boolean; attachments?: { name: string; path: string; size?: number; truncated?: boolean }[] } }
   | { event: 'title'; data: { conversationId: string; title: string } }
   | { event: 'delta'; data: { text: string } }
   | { event: 'tool'; data: ToolEvent }
@@ -38,13 +38,15 @@ export async function streamChat(path: string, body: unknown, onEvent: (e: ChatE
   const r = await authFetch(path, { method: 'POST', body: JSON.stringify(body), signal, headers: { Accept: 'text/event-stream' } });
   if (!r.ok) {
     let msg = `Kesalahan ${r.status}`;
+    let code: string | undefined;
     try {
       const j = await r.json();
       msg = Array.isArray(j.message) ? j.message.join(', ') : j.message ?? msg;
+      code = typeof j.code === 'string' ? j.code : undefined;
     } catch {
       /* ignore */
     }
-    throw new ApiError(msg, r.status);
+    throw new ApiError(msg, r.status, code);
   }
   if (!r.body) return;
   const reader = r.body.getReader();

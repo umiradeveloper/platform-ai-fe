@@ -25,6 +25,9 @@ const ACTION_LABEL: Record<string, string> = {
   'auth.superapps_link': 'Akun lokal ditautkan ke SuperApps',
   'auth.superapps_role_sync': 'Role disinkron dari SuperApps',
   'auth.superapps_denied': 'Login SuperApps ditolak',
+  'synology.connect': 'Menghubungkan Synology',
+  'synology.disconnect': 'Memutus Synology',
+  'synology.save': 'Menyimpan jawaban ke Synology',
 };
 
 export default function LogsPage() {

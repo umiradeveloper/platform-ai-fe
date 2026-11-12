@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { api } from './api';
+import { synology, SynologyStatus } from './synology';
 
 export interface ConversationItem {
   id: string;
@@ -29,6 +30,8 @@ interface Store {
   remove: (id: string) => void;
   sidebarOpen: boolean;
   setSidebarOpen: (v: boolean) => void;
+  syno: SynologyStatus | null;
+  refreshSyno: () => Promise<void>;
 }
 
 const Ctx = createContext<Store | null>(null);
@@ -38,6 +41,14 @@ export function ChatStoreProvider({ children }: { children: React.ReactNode }) {
   const [models, setModels] = useState<ModelOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [syno, setSyno] = useState<SynologyStatus | null>(null);
+  const refreshSyno = useCallback(async () => {
+    try {
+      setSyno(await synology.status());
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   const reload = useCallback(async () => {
     try {
@@ -51,7 +62,8 @@ export function ChatStoreProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     reload().catch(() => undefined);
     api<ModelOption[]>('/models').then(setModels).catch(() => undefined);
-  }, [reload]);
+    refreshSyno();
+  }, [reload, refreshSyno]);
 
   const upsert = useCallback((c: Partial<ConversationItem> & { id: string }) => {
     setConversations((prev) => {
@@ -65,7 +77,7 @@ export function ChatStoreProvider({ children }: { children: React.ReactNode }) {
   const remove = useCallback((id: string) => setConversations((prev) => prev.filter((x) => x.id !== id)), []);
 
   return (
-    <Ctx.Provider value={{ conversations, loading, models, reload, upsert, remove, sidebarOpen, setSidebarOpen }}>{children}</Ctx.Provider>
+    <Ctx.Provider value={{ conversations, loading, models, reload, upsert, remove, sidebarOpen, setSidebarOpen, syno, refreshSyno }}>{children}</Ctx.Provider>
   );
 }
 

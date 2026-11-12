@@ -1,7 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { AlertTriangle, Check, ChevronDown, Copy, RefreshCw, Wrench } from 'lucide-react';
+import { AlertTriangle, Check, ChevronDown, Copy, FileText, HardDriveUpload, RefreshCw, Wrench } from 'lucide-react';
+import { toast } from 'sonner';
+import { useChatStore } from '@/lib/chat-store';
+import { AttachmentRef, fmtSize, synoErrorCode, synology } from '@/lib/synology';
+import { SynologyPicker } from './synology-picker';
 import { Markdown } from './markdown';
 import { ProviderBadge } from '@/components/ui/basics';
 import { cn, fmtNum } from '@/lib/utils';
@@ -19,6 +23,7 @@ export interface UIMessage {
   error?: string;
   notice?: string;
   cancelled?: boolean;
+  attachments?: AttachmentRef[] | null;
 }
 
 const TOOL_NAME: Record<string, string> = {
@@ -80,12 +85,64 @@ function ToolTrace({ events, live }: { events: ToolEvent[]; live?: boolean }) {
   );
 }
 
+function defaultFileName(content: string) {
+  const first = content.replace(/[#*_`>|]/g, ' ').split('\n').map((l) => l.trim()).find((l) => l.length > 3) ?? 'jawaban';
+  return `${first.slice(0, 50).trim().replace(/[\\/:*?"<>|]+/g, '-')}.md`;
+}
+
+function SaveToSynology({ messageId, defaultName }: { messageId: string; defaultName: string }) {
+  const { syno } = useChatStore();
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState(defaultName);
+  const [saving, setSaving] = useState(false);
+  if (!syno?.enabled) return null;
+  return (
+    <>
+      <button className="btn-icon h-7 w-7" title="Simpan ke Synology" onClick={() => setOpen(true)}>
+        <HardDriveUpload className="h-3.5 w-3.5" />
+      </button>
+      {open && (
+        <SynologyPicker
+          mode="folder"
+          onClose={() => setOpen(false)}
+          folderAction={
+            <input className="input h-9 text-xs" value={name} onChange={(e) => setName(e.target.value)} aria-label="Nama file" placeholder="nama-file.md" disabled={saving} />
+          }
+          onPickFolder={async (folder) => {
+            setSaving(true);
+            try {
+              const r = await synology.saveMessage(messageId, folder, name);
+              toast.success(`Tersimpan di Synology: ${r.path}`);
+              setOpen(false);
+            } catch (e: any) {
+              toast.error(e.message, synoErrorCode(e) === 'session_expired' ? { action: { label: 'Hubungkan ulang', onClick: () => (window.location.href = '/settings#synology') } } : undefined);
+            } finally {
+              setSaving(false);
+            }
+          }}
+        />
+      )}
+    </>
+  );
+}
+
 export function MessageView({ m, isLast, onRegenerate, busy }: { m: UIMessage; isLast: boolean; onRegenerate: () => void; busy: boolean }) {
   const [copied, setCopied] = useState(false);
 
   if (m.role === 'USER') {
     return (
-      <div className="flex animate-rise justify-end">
+      <div className="flex animate-rise flex-col items-end gap-1.5">
+        {!!m.attachments?.length && (
+          <div className="flex max-w-[85%] flex-wrap justify-end gap-1.5 sm:max-w-[75%]">
+            {m.attachments.map((a) => (
+              <span key={a.path} className="flex max-w-[240px] items-center gap-1.5 rounded-lg border border-border bg-card px-2 py-1 text-xs shadow-sm" title={`${a.path}${a.truncated ? ' (isi terpotong karena panjang)' : ''}`}>
+                <FileText className="h-3.5 w-3.5 shrink-0 text-primary" />
+                <span className="truncate">{a.name}</span>
+                {a.size != null && <span className="shrink-0 text-muted-foreground">{fmtSize(a.size)}</span>}
+              </span>
+            ))}
+          </div>
+        )}
         <div className="max-w-[85%] whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-primary px-4 py-2.5 text-[15px] leading-relaxed text-primary-foreground shadow-sm sm:max-w-[75%]">
           {m.content}
         </div>
@@ -143,6 +200,7 @@ export function MessageView({ m, isLast, onRegenerate, busy }: { m: UIMessage; i
                 <RefreshCw className="h-3.5 w-3.5" />
               </button>
             )}
+            {m.content && !m.id.startsWith('tmp-') && <SaveToSynology messageId={m.id} defaultName={defaultFileName(m.content)} />}
             {m.model && (
               <span className="ml-1 flex items-center gap-1.5">
                 <ProviderBadge provider={m.model.provider} />

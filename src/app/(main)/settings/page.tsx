@@ -8,6 +8,7 @@ import { api, updateUser, User } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useChatStore } from '@/lib/chat-store';
 import { ProviderBadge, Spinner, ThemeToggle } from '@/components/ui/basics';
+import { SynologyCard } from '@/components/synology-card';
 import { cn, fmtCompact, fmtNum, fmtUsd } from '@/lib/utils';
 
 interface MyUsage {
@@ -100,6 +101,8 @@ export default function ProfilePage() {
               </>
             )}
           </section>
+
+          <SynologyCard />
 
           <section className="card p-5">
             <h2 className="mb-4 text-sm font-bold">Profil</h2>

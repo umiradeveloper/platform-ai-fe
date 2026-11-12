@@ -35,7 +35,11 @@ export function onSessionChange(fn: (u: User | null) => void) {
 }
 
 export class ApiError extends Error {
-  constructor(message: string, readonly status: number) {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly code?: string,
+  ) {
     super(message);
   }
 }
@@ -63,14 +67,17 @@ export async function refreshSession(): Promise<boolean> {
   return refreshing;
 }
 
-async function errorMessage(r: Response) {
+async function errorBody(r: Response): Promise<{ message: string; code?: string }> {
   try {
     const j = await r.json();
     const m = Array.isArray(j.message) ? j.message.join(', ') : j.message;
-    return m || `Kesalahan ${r.status}`;
+    return { message: m || `Kesalahan ${r.status}`, code: typeof j.code === 'string' ? j.code : undefined };
   } catch {
-    return `Kesalahan ${r.status}`;
+    return { message: `Kesalahan ${r.status}` };
   }
+}
+async function errorMessage(r: Response) {
+  return (await errorBody(r)).message;
 }
 
 /** fetch terautentikasi; otomatis refresh token sekali bila 401. Mengembalikan Response mentah. */
@@ -88,7 +95,10 @@ export async function authFetch(path: string, init: RequestInit = {}, retry = tr
 export async function api<T = unknown>(path: string, init: RequestInit & { json?: unknown } = {}): Promise<T> {
   const { json, ...rest } = init;
   const r = await authFetch(path, { ...rest, body: json !== undefined ? JSON.stringify(json) : rest.body });
-  if (!r.ok) throw new ApiError(await errorMessage(r), r.status);
+  if (!r.ok) {
+    const b = await errorBody(r);
+    throw new ApiError(b.message, r.status, b.code);
+  }
   if (r.status === 204) return undefined as T;
   return r.json() as Promise<T>;
 }

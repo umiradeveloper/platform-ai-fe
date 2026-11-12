@@ -42,10 +42,10 @@ export function TokensChart({ data }: { data: { day: string; inputTokens: number
       <Legend items={[{ label: 'Token input', color: 'var(--chart-1)' }, { label: 'Token output', color: 'var(--chart-2)' }]} />
       <div className="h-64">
         <ResponsiveContainer>
-          <BarChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -8 }} barCategoryGap="22%">
+          <BarChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: 0 }} barCategoryGap="22%">
             {grid}
             <XAxis dataKey="day" tickFormatter={fmtDay} {...axis} minTickGap={16} />
-            <YAxis tickFormatter={fmtCompact} {...axis} width={44} />
+            <YAxis tickFormatter={fmtCompact} {...axis} width={64} />
             <Tooltip content={<TooltipBox />} cursor={{ fill: 'hsl(var(--muted))', opacity: 0.6 }} />
             <Bar dataKey="inputTokens" name="Input" stackId="t" fill="var(--chart-1)" stroke="hsl(var(--card))" strokeWidth={1} />
             <Bar dataKey="outputTokens" name="Output" stackId="t" fill="var(--chart-2)" stroke="hsl(var(--card))" strokeWidth={1} radius={[4, 4, 0, 0]} />
@@ -61,10 +61,10 @@ export function SingleLineChart({ data, dataKey, name, money }: { data: any[]; d
   return (
     <div className="h-56">
       <ResponsiveContainer>
-        <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -8 }}>
+        <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
           {grid}
           <XAxis dataKey="day" tickFormatter={fmtDay} {...axis} minTickGap={16} />
-          <YAxis tickFormatter={(v) => (money ? `$${fmtCompact(v)}` : fmtCompact(v))} {...axis} width={48} />
+          <YAxis tickFormatter={(v) => (money ? `$${fmtCompact(v)}` : fmtCompact(v))} {...axis} width={64} />
           <Tooltip content={<TooltipBox money={money} />} cursor={{ stroke: 'hsl(var(--muted-foreground))', strokeDasharray: '3 3' }} />
           <Line type="monotone" dataKey={dataKey} name={name} stroke="var(--chart-1)" strokeWidth={2} dot={false} activeDot={{ r: 4, strokeWidth: 2, stroke: 'hsl(var(--card))' }} />
         </LineChart>
