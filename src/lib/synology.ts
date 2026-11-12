@@ -2,6 +2,9 @@ import { api, ApiError } from './api';
 
 export interface SynologyStatus {
   enabled: boolean;
+  /** Universal Search (SYNO.Finder) terpasang di NAS → pencarian isi & nama file se-NAS */
+  universalSearch: boolean;
+  folderMaxFiles: number;
   nasHost: string | null;
   allowRemember: boolean;
   supportedExtensions: string[];
@@ -28,6 +31,29 @@ export interface AttachmentRef {
   path: string;
   size?: number;
   truncated?: boolean;
+  /** synology = file, folder = daftar isi folder, knowledge = potongan dari basis pengetahuan */
+  source?: 'synology' | 'folder' | 'knowledge';
+  /** saat memilih: file tunggal atau seluruh folder */
+  kind?: 'file' | 'folder';
+}
+
+export interface FolderPreview {
+  path: string;
+  name: string;
+  totalFiles: number;
+  readableFiles: number;
+  willRead: number;
+  maxFiles: number;
+  scanTruncated: boolean;
+  files: { name: string; path: string; size?: number }[];
+}
+
+export interface ContentSearchResult {
+  q: string;
+  path: string;
+  total: number;
+  contentIndexedFolders: string[];
+  files: (SynoItem & { score?: number })[];
 }
 
 export const synology = {
@@ -38,6 +64,9 @@ export const synology = {
   browse: (path?: string) => api<{ path: string; total: number; files: SynoItem[] }>(`/synology/browse${path && path !== '/' ? `?path=${encodeURIComponent(path)}` : ''}`),
   search: (path: string, q: string) =>
     api<{ finished: boolean; files: SynoItem[] }>(`/synology/search?path=${encodeURIComponent(path)}&q=${encodeURIComponent(q)}`),
+  folderPreview: (path: string) => api<FolderPreview>(`/synology/folder-preview?path=${encodeURIComponent(path)}`),
+  contentSearch: (q: string, path?: string) =>
+    api<ContentSearchResult>(`/synology/content-search?q=${encodeURIComponent(q)}${path && path !== '/' ? `&path=${encodeURIComponent(path)}` : ''}`),
   saveMessage: (messageId: string, folder: string, filename: string) =>
     api<{ ok: boolean; path: string }>('/synology/save-message', { method: 'POST', json: { messageId, folder, filename } }),
 };

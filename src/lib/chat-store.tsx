@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { api } from './api';
 import { synology, SynologyStatus } from './synology';
+import { knowledge, KnowledgeState } from './knowledge';
 
 export interface ConversationItem {
   id: string;
@@ -32,6 +33,9 @@ interface Store {
   setSidebarOpen: (v: boolean) => void;
   syno: SynologyStatus | null;
   refreshSyno: () => Promise<void>;
+  /** basis pengetahuan (RAG) milik user; null = belum dimuat / tidak aktif */
+  kb: KnowledgeState | null;
+  refreshKb: () => Promise<void>;
 }
 
 const Ctx = createContext<Store | null>(null);
@@ -50,6 +54,15 @@ export function ChatStoreProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const [kb, setKb] = useState<KnowledgeState | null>(null);
+  const refreshKb = useCallback(async () => {
+    try {
+      setKb(await knowledge.list());
+    } catch {
+      setKb(null);
+    }
+  }, []);
+
   const reload = useCallback(async () => {
     try {
       const r = await api<{ items: ConversationItem[] }>('/conversations?limit=100');
@@ -63,7 +76,8 @@ export function ChatStoreProvider({ children }: { children: React.ReactNode }) {
     reload().catch(() => undefined);
     api<ModelOption[]>('/models').then(setModels).catch(() => undefined);
     refreshSyno();
-  }, [reload, refreshSyno]);
+    refreshKb();
+  }, [reload, refreshSyno, refreshKb]);
 
   const upsert = useCallback((c: Partial<ConversationItem> & { id: string }) => {
     setConversations((prev) => {
@@ -77,7 +91,7 @@ export function ChatStoreProvider({ children }: { children: React.ReactNode }) {
   const remove = useCallback((id: string) => setConversations((prev) => prev.filter((x) => x.id !== id)), []);
 
   return (
-    <Ctx.Provider value={{ conversations, loading, models, reload, upsert, remove, sidebarOpen, setSidebarOpen, syno, refreshSyno }}>{children}</Ctx.Provider>
+    <Ctx.Provider value={{ conversations, loading, models, reload, upsert, remove, sidebarOpen, setSidebarOpen, syno, refreshSyno, kb, refreshKb }}>{children}</Ctx.Provider>
   );
 }
 

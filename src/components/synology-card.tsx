@@ -10,7 +10,7 @@ import { fmtDate } from '@/lib/utils';
 
 /** Kartu "Hubungkan Synology" di halaman Profil. */
 export function SynologyCard() {
-  const { syno, refreshSyno } = useChatStore();
+  const { syno, refreshSyno, refreshKb } = useChatStore();
   const [account, setAccount] = useState('');
   const [password, setPassword] = useState('');
   const [otp, setOtp] = useState('');
@@ -47,7 +47,7 @@ export function SynologyCard() {
       setOtp('');
       setNeedOtp(false);
       setEditing(false);
-      await refreshSyno();
+      await Promise.all([refreshSyno(), refreshKb()]);
       toast.success('Synology terhubung');
     } catch (err: any) {
       const code = synoErrorCode(err);
@@ -64,11 +64,11 @@ export function SynologyCard() {
   }
 
   async function disconnect() {
-    if (!confirm('Putuskan koneksi Synology? Lampiran yang sudah ada di chat tetap tersimpan.')) return;
+    if (!confirm('Putuskan koneksi Synology? Lampiran yang sudah ada di chat tetap tersimpan, tetapi basis pengetahuan Anda ikut dihapus.')) return;
     setBusy(true);
     try {
       await synology.disconnect();
-      await refreshSyno();
+      await Promise.all([refreshSyno(), refreshKb()]);
       toast.success('Koneksi Synology diputus');
     } catch (err: any) {
       toast.error(err.message);

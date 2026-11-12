@@ -1,18 +1,51 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUp, FileText, HardDrive, Paperclip, Square, X } from 'lucide-react';
+import { ArrowUp, FileText, Folder, HardDrive, Library, Paperclip, Square, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useChatStore } from '@/lib/chat-store';
 import { AttachmentRef } from '@/lib/synology';
 import { cn } from '@/lib/utils';
 import { SynologyPicker } from './synology-picker';
 
-export function PromptInput({ onSend, onStop, busy, autoFocus }: { onSend: (text: string, files: AttachmentRef[]) => void; onStop: () => void; busy: boolean; autoFocus?: boolean }) {
+const KB_KEY = 'umira.useKnowledge';
+
+export function PromptInput({
+  onSend,
+  onStop,
+  busy,
+  autoFocus,
+}: {
+  onSend: (text: string, files: AttachmentRef[], opts: { useKnowledge: boolean }) => void;
+  onStop: () => void;
+  busy: boolean;
+  autoFocus?: boolean;
+}) {
   const [text, setText] = useState('');
   const [files, setFiles] = useState<AttachmentRef[]>([]);
   const [picker, setPicker] = useState(false);
-  const { syno } = useChatStore();
+  const { syno, kb } = useChatStore();
+  const kbReady = !!kb?.enabled && kb.indexes.some((i) => i.chunkCount > 0);
+  const [useKb, setUseKb] = useState(false);
+  useEffect(() => {
+    try {
+      setUseKb(localStorage.getItem(KB_KEY) === '1');
+    } catch {
+      /* abaikan */
+    }
+  }, []);
+  const toggleKb = () => {
+    const next = !useKb;
+    setUseKb(next);
+    try {
+      localStorage.setItem(KB_KEY, next ? '1' : '0');
+    } catch {
+      /* abaikan */
+    }
+    toast.message(next ? 'Basis pengetahuan aktif' : 'Basis pengetahuan nonaktif', {
+      description: next ? 'Umira AI akan mencari jawaban di folder Synology yang sudah Anda indeks.' : undefined,
+    });
+  };
   const ref = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -30,8 +63,9 @@ export function PromptInput({ onSend, onStop, busy, autoFocus }: { onSend: (text
 
   const submit = () => {
     if (!canSend) return;
-    const t = text.trim() || (files.length === 1 ? 'Tolong ringkas file terlampir.' : 'Tolong ringkas file-file terlampir.');
-    onSend(t, files);
+    const hasFolder = files.some((f) => f.kind === 'folder');
+    const t = text.trim() || (hasFolder ? 'Tolong ringkas isi folder terlampir.' : files.length === 1 ? 'Tolong ringkas file terlampir.' : 'Tolong ringkas file-file terlampir.');
+    onSend(t, files, { useKnowledge: kbReady && useKb });
     setText('');
     setFiles([]);
   };
@@ -51,8 +85,9 @@ export function PromptInput({ onSend, onStop, busy, autoFocus }: { onSend: (text
           <div className="flex flex-wrap gap-1.5 px-3 pt-3">
             {files.map((f) => (
               <span key={f.path} className="flex max-w-[260px] items-center gap-1.5 rounded-lg border border-border bg-muted/60 py-1 pl-2 pr-1 text-xs" title={f.path}>
-                <FileText className="h-3.5 w-3.5 shrink-0 text-primary" />
+                {f.kind === 'folder' ? <Folder className="h-3.5 w-3.5 shrink-0 text-copper-500" /> : <FileText className="h-3.5 w-3.5 shrink-0 text-primary" />}
                 <span className="truncate">{f.name}</span>
+                {f.kind === 'folder' && <span className="shrink-0 text-muted-foreground">folder</span>}
                 <button className="rounded p-0.5 text-muted-foreground hover:bg-background hover:text-foreground" onClick={() => setFiles(files.filter((x) => x.path !== f.path))} aria-label={`Hapus ${f.name}`}>
                   <X className="h-3 w-3" />
                 </button>
@@ -71,14 +106,39 @@ export function PromptInput({ onSend, onStop, busy, autoFocus }: { onSend: (text
               submit();
             }
           }}
-          placeholder={files.length ? 'Apa yang ingin dilakukan dengan file ini?' : 'Tanyakan apa saja ke Umira AI…'}
+          placeholder={
+            files.length
+              ? files.some((f) => f.kind === 'folder')
+                ? 'Apa yang ingin dilakukan dengan folder ini?'
+                : 'Apa yang ingin dilakukan dengan file ini?'
+              : kbReady && useKb
+                ? 'Tanya dari basis pengetahuan Anda…'
+                : 'Tanyakan apa saja ke Umira AI…'
+          }
           className="scroll-thin block max-h-60 w-full resize-none bg-transparent px-4 pb-2 pt-3.5 text-[15px] outline-none placeholder:text-muted-foreground"
         />
         <div className="flex items-center justify-between px-2.5 pb-2.5">
-          <button type="button" className={cn('btn-icon w-auto gap-1.5 px-2 text-xs', syno?.connected && 'text-primary')} title="Lampirkan file dari Synology" onClick={openAttach}>
-            {syno?.enabled ? <HardDrive className="h-4 w-4" /> : <Paperclip className="h-4 w-4" />}
-            {syno?.enabled && <span className="hidden sm:inline">Synology</span>}
-          </button>
+          <div className="flex items-center gap-1">
+            <button type="button" className={cn('btn-icon w-auto gap-1.5 px-2 text-xs', syno?.connected && 'text-primary')} title="Lampirkan file atau folder dari Synology" onClick={openAttach}>
+              {syno?.enabled ? <HardDrive className="h-4 w-4" /> : <Paperclip className="h-4 w-4" />}
+              {syno?.enabled && <span className="hidden sm:inline">Synology</span>}
+            </button>
+            {kbReady && (
+              <button
+                type="button"
+                onClick={toggleKb}
+                aria-pressed={useKb}
+                title={useKb ? 'Basis pengetahuan aktif — klik untuk menonaktifkan' : 'Cari jawaban di folder Synology yang sudah diindeks'}
+                className={cn(
+                  'flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs font-medium transition',
+                  useKb ? 'bg-teal-50 text-primary ring-1 ring-primary/30 dark:bg-teal-900/40' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                )}
+              >
+                <Library className="h-4 w-4" />
+                <span className="hidden sm:inline">Basis pengetahuan</span>
+              </button>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             <span className="hidden text-[11px] text-muted-foreground sm:inline">Enter kirim · Shift+Enter baris baru</span>
             {busy ? (

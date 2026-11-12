@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { AlertTriangle, Check, ChevronDown, Copy, FileText, HardDriveUpload, RefreshCw, Wrench } from 'lucide-react';
+import { AlertTriangle, Check, ChevronDown, Copy, FileText, Folder, HardDriveUpload, Library, RefreshCw, Wrench } from 'lucide-react';
 import { toast } from 'sonner';
 import { useChatStore } from '@/lib/chat-store';
 import { AttachmentRef, fmtSize, synoErrorCode, synology } from '@/lib/synology';
@@ -126,23 +126,64 @@ function SaveToSynology({ messageId, defaultName }: { messageId: string; default
   );
 }
 
+const chip = 'flex max-w-[240px] items-center gap-1.5 rounded-lg border border-border bg-card px-2 py-1 text-xs shadow-sm';
+
+/** Lampiran pesan user: folder, file Synology (dilipat bila banyak), dan sumber basis pengetahuan. */
+function AttachmentChips({ items }: { items: AttachmentRef[] }) {
+  const [open, setOpen] = useState(false);
+  const folders = items.filter((a) => a.source === 'folder' || a.kind === 'folder');
+  const files = items.filter((a) => a.source !== 'folder' && a.kind !== 'folder' && a.source !== 'knowledge');
+  const kb = items.filter((a) => a.source === 'knowledge');
+  // file hasil lampiran folder disembunyikan di balik satu tombol agar tidak memenuhi layar
+  const LIMIT = folders.length ? 0 : 4;
+  const shown = open || files.length <= LIMIT ? files : files.slice(0, Math.max(0, LIMIT - 1));
+  return (
+    <div className="flex max-w-[85%] flex-col items-end gap-1.5 sm:max-w-[75%]">
+      {(folders.length > 0 || files.length > 0) && (
+        <div className="flex flex-wrap justify-end gap-1.5">
+          {folders.map((a) => (
+            <span key={`d:${a.path}`} className={chip} title={a.path}>
+              <Folder className="h-3.5 w-3.5 shrink-0 text-copper-500" />
+              <span className="truncate font-medium">{a.name.replace(/^Daftar isi folder /, '')}</span>
+              <span className="shrink-0 text-muted-foreground">folder</span>
+            </span>
+          ))}
+          {shown.map((a) => (
+            <span key={a.path} className={chip} title={`${a.path}${a.truncated ? ' (isi terpotong karena panjang)' : ''}`}>
+              <FileText className="h-3.5 w-3.5 shrink-0 text-primary" />
+              <span className="truncate">{a.name}</span>
+              {!!a.size && <span className="shrink-0 text-muted-foreground">{fmtSize(a.size)}</span>}
+            </span>
+          ))}
+          {files.length > LIMIT && (
+            <button className={cn(chip, 'font-semibold text-primary hover:bg-muted')} onClick={() => setOpen(!open)}>
+              {open ? 'Ringkas' : folders.length ? `${files.length} file dibaca` : `+${files.length - shown.length} file lainnya`}
+            </button>
+          )}
+        </div>
+      )}
+      {kb.length > 0 && (
+        <div className="flex flex-wrap items-center justify-end gap-1.5">
+          <span className="text-[11px] text-muted-foreground">Dari basis pengetahuan:</span>
+          {kb.map((a) => (
+            <span key={`k:${a.path}`} className={cn(chip, 'border-teal-200 bg-teal-50/70 dark:border-teal-800 dark:bg-teal-900/30')} title={a.path}>
+              <Library className="h-3.5 w-3.5 shrink-0 text-primary" />
+              <span className="truncate">{a.name}</span>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function MessageView({ m, isLast, onRegenerate, busy }: { m: UIMessage; isLast: boolean; onRegenerate: () => void; busy: boolean }) {
   const [copied, setCopied] = useState(false);
 
   if (m.role === 'USER') {
     return (
       <div className="flex animate-rise flex-col items-end gap-1.5">
-        {!!m.attachments?.length && (
-          <div className="flex max-w-[85%] flex-wrap justify-end gap-1.5 sm:max-w-[75%]">
-            {m.attachments.map((a) => (
-              <span key={a.path} className="flex max-w-[240px] items-center gap-1.5 rounded-lg border border-border bg-card px-2 py-1 text-xs shadow-sm" title={`${a.path}${a.truncated ? ' (isi terpotong karena panjang)' : ''}`}>
-                <FileText className="h-3.5 w-3.5 shrink-0 text-primary" />
-                <span className="truncate">{a.name}</span>
-                {a.size != null && <span className="shrink-0 text-muted-foreground">{fmtSize(a.size)}</span>}
-              </span>
-            ))}
-          </div>
-        )}
+        {!!m.attachments?.length && <AttachmentChips items={m.attachments} />}
         <div className="max-w-[85%] whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-primary px-4 py-2.5 text-[15px] leading-relaxed text-primary-foreground shadow-sm sm:max-w-[75%]">
           {m.content}
         </div>

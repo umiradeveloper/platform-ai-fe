@@ -142,7 +142,11 @@ export function ChatView({ conversationId }: { conversationId?: string }) {
           }
           return copy;
         });
-        patchLast((m) => ({ ...m, model: e.data.model }));
+        {
+          const kbHits = e.data.attachments?.filter((a) => a.source === 'knowledge').length ?? 0;
+          const kbNotice = e.data.knowledgeUsed && !kbHits ? 'Tidak ada isi yang relevan di basis pengetahuan Anda — dijawab dari pengetahuan umum AI.' : undefined;
+          patchLast((m) => ({ ...m, model: e.data.model, ...(kbNotice ? { notice: kbNotice } : {}) }));
+        }
         break;
       }
       case 'title':
@@ -202,15 +206,17 @@ export function ChatView({ conversationId }: { conversationId?: string }) {
     }
   }
 
-  function send(text: string, files: AttachmentRef[] = []) {
+  function send(text: string, files: AttachmentRef[] = [], opts: { useKnowledge?: boolean } = {}) {
     // modelId boleh null (daftar model belum termuat) — backend memakai model default.
     if (modelId) localStorage.setItem(MODEL_KEY, modelId);
-    setMessages((prev) => [...prev, { id: `tmp-u-${Date.now()}`, role: 'USER', content: text, attachments: files }]);
+    setMessages((prev) => [...prev, { id: `tmp-u-${Date.now()}`, role: 'USER', content: text, attachments: files.map((f) => (f.kind === 'folder' ? { ...f, source: 'folder' as const } : f)) }]);
     run('/chat/completions/stream', {
       conversationId: convRef.current,
       content: text,
       modelId: modelId ?? undefined,
-      synologyFiles: files.length ? files.map((f) => f.path) : undefined,
+      synologyFiles: files.some((f) => f.kind !== 'folder') ? files.filter((f) => f.kind !== 'folder').map((f) => f.path) : undefined,
+      synologyFolders: files.some((f) => f.kind === 'folder') ? files.filter((f) => f.kind === 'folder').map((f) => f.path) : undefined,
+      useKnowledge: opts.useKnowledge || undefined,
     });
   }
 

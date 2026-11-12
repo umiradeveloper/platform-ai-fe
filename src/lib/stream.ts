@@ -1,7 +1,8 @@
+import type { AttachmentRef } from './synology';
 import { ApiError, authFetch } from './api';
 
 export type ChatEvent =
-  | { event: 'meta'; data: { conversationId: string; userMessageId: string; model: ModelRef; regenerate?: boolean; attachments?: { name: string; path: string; size?: number; truncated?: boolean }[] } }
+  | { event: 'meta'; data: { conversationId: string; userMessageId: string; model: ModelRef; regenerate?: boolean; attachments?: AttachmentRef[]; knowledgeUsed?: boolean } }
   | { event: 'title'; data: { conversationId: string; title: string } }
   | { event: 'delta'; data: { text: string } }
   | { event: 'tool'; data: ToolEvent }
