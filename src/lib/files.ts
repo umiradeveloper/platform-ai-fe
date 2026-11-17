@@ -22,7 +22,30 @@ async function blobOf(id: string, inline = false) {
   return r.blob();
 }
 
+async function saveBlob(apiPath: string, filename: string) {
+  const r = await authFetch(apiPath);
+  if (!r.ok) {
+    let msg = `Kesalahan ${r.status}`;
+    try {
+      msg = (await r.json()).message ?? msg;
+    } catch {
+      /* bukan JSON */
+    }
+    throw new ApiError(msg, r.status);
+  }
+  const url = URL.createObjectURL(await r.blob());
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+}
+
 export const files = {
+  /** Unduh file asli dari Synology (lampiran / sumber basis pengetahuan) — semua jenis file. */
+  downloadFromSynology: (path: string, name: string) => saveBlob(`/synology/download?path=${encodeURIComponent(path)}`, name),
   /** Unduh lewat fetch berotorisasi (token ada di memori, jadi tidak bisa memakai <a href> biasa). */
   async download(f: GeneratedFile) {
     const url = URL.createObjectURL(await blobOf(f.id));

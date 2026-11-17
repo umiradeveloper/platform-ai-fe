@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { AlertTriangle, Check, ChevronDown, Copy, FileText, Folder, HardDriveUpload, Library, RefreshCw, Wrench } from 'lucide-react';
+import { AlertTriangle, Check, ChevronDown, Copy, Download, FileText, Folder, HardDriveUpload, Library, Loader2, RefreshCw, Wrench } from 'lucide-react';
 import { toast } from 'sonner';
 import { useChatStore } from '@/lib/chat-store';
 import { AttachmentRef, fmtSize, synoErrorCode, synology } from '@/lib/synology';
@@ -12,6 +12,7 @@ import { cn, fmtNum } from '@/lib/utils';
 import type { ToolEvent } from '@/lib/stream';
 import type { GeneratedFile } from '@/lib/files';
 import { GeneratedFiles } from './generated-files';
+import { files as filesApi } from '@/lib/files';
 
 export interface UIMessage {
   id: string;
@@ -135,6 +136,19 @@ const chip = 'flex max-w-[240px] items-center gap-1.5 rounded-lg border border-b
 /** Lampiran pesan user: folder, file Synology (dilipat bila banyak), dan sumber basis pengetahuan. */
 function AttachmentChips({ items }: { items: AttachmentRef[] }) {
   const [open, setOpen] = useState(false);
+  const [dl, setDl] = useState<string | null>(null);
+  const download = async (a: AttachmentRef) => {
+    setDl(a.path);
+    try {
+      await filesApi.downloadFromSynology(a.path, a.name);
+    } catch (e: any) {
+      toast.error(synoErrorCode(e) === 'not_connected' || synoErrorCode(e) === 'session_expired' ? 'Hubungkan ulang akun Synology di halaman Profil untuk mengunduh.' : e.message);
+    } finally {
+      setDl(null);
+    }
+  };
+  const DlIcon = ({ a }: { a: AttachmentRef }) =>
+    dl === a.path ? <Loader2 className="h-3 w-3 shrink-0 animate-spin" /> : <Download className="h-3 w-3 shrink-0 opacity-0 transition group-hover/chip:opacity-60" />;
   const folders = items.filter((a) => a.source === 'folder' || a.kind === 'folder');
   const files = items.filter((a) => a.source !== 'folder' && a.kind !== 'folder' && a.source !== 'knowledge');
   const kb = items.filter((a) => a.source === 'knowledge');
@@ -153,11 +167,18 @@ function AttachmentChips({ items }: { items: AttachmentRef[] }) {
             </span>
           ))}
           {shown.map((a) => (
-            <span key={a.path} className={chip} title={`${a.path}${a.truncated ? ' (isi terpotong karena panjang)' : ''}`}>
+            <button
+              type="button"
+              key={a.path}
+              onClick={() => download(a)}
+              className={cn(chip, 'group/chip hover:border-primary/40 hover:bg-muted')}
+              title={`Unduh ${a.path}${a.truncated ? ' (isi untuk AI terpotong karena panjang)' : ''}`}
+            >
               <FileText className="h-3.5 w-3.5 shrink-0 text-primary" />
               <span className="truncate">{a.name}</span>
               {!!a.size && <span className="shrink-0 text-muted-foreground">{fmtSize(a.size)}</span>}
-            </span>
+              <DlIcon a={a} />
+            </button>
           ))}
           {files.length > LIMIT && (
             <button className={cn(chip, 'font-semibold text-primary hover:bg-muted')} onClick={() => setOpen(!open)}>
@@ -170,10 +191,17 @@ function AttachmentChips({ items }: { items: AttachmentRef[] }) {
         <div className="flex flex-wrap items-center justify-end gap-1.5">
           <span className="text-[11px] text-muted-foreground">Dari basis pengetahuan:</span>
           {kb.map((a) => (
-            <span key={`k:${a.path}`} className={cn(chip, 'border-teal-200 bg-teal-50/70 dark:border-teal-800 dark:bg-teal-900/30')} title={a.path}>
+            <button
+              type="button"
+              key={`k:${a.path}`}
+              onClick={() => download(a)}
+              className={cn(chip, 'group/chip border-teal-200 bg-teal-50/70 hover:border-primary/40 dark:border-teal-800 dark:bg-teal-900/30')}
+              title={`Unduh ${a.path}`}
+            >
               <Library className="h-3.5 w-3.5 shrink-0 text-primary" />
               <span className="truncate">{a.name}</span>
-            </span>
+              <DlIcon a={a} />
+            </button>
           ))}
         </div>
       )}
