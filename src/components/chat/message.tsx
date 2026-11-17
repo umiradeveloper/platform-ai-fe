@@ -10,6 +10,8 @@ import { Markdown } from './markdown';
 import { ProviderBadge } from '@/components/ui/basics';
 import { cn, fmtNum } from '@/lib/utils';
 import type { ToolEvent } from '@/lib/stream';
+import type { GeneratedFile } from '@/lib/files';
+import { GeneratedFiles } from './generated-files';
 
 export interface UIMessage {
   id: string;
@@ -24,6 +26,8 @@ export interface UIMessage {
   notice?: string;
   cancelled?: boolean;
   attachments?: AttachmentRef[] | null;
+  /** file yang dibuat Hermes untuk diunduh */
+  files?: GeneratedFile[] | null;
 }
 
 const TOOL_NAME: Record<string, string> = {
@@ -213,6 +217,7 @@ export function MessageView({ m, isLast, onRegenerate, busy }: { m: UIMessage; i
             </div>
           )
         )}
+        {!!m.files?.length && <GeneratedFiles items={m.files} />}
         {m.error && (
           <div className="mt-2 flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />

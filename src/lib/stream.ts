@@ -1,3 +1,4 @@
+import type { GeneratedFile } from './files';
 import type { AttachmentRef } from './synology';
 import { ApiError, authFetch } from './api';
 
@@ -7,6 +8,7 @@ export type ChatEvent =
   | { event: 'delta'; data: { text: string } }
   | { event: 'tool'; data: ToolEvent }
   | { event: 'fallback'; data: { from: ModelRef; to: ModelRef; reason: string } }
+  | { event: 'files'; data: { messageId: string | null; content: string; files: GeneratedFile[] } }
   | { event: 'done'; data: DoneData }
   | { event: 'error'; data: { message: string } };
 

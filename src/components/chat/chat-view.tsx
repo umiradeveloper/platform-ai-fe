@@ -169,6 +169,10 @@ export function ChatView({ conversationId }: { conversationId?: string }) {
       case 'fallback':
         patchLast((m) => ({ ...m, model: e.data.to, notice: `${e.data.from.displayName} tidak tersedia — dialihkan ke ${e.data.to.displayName}.` }));
         break;
+      case 'files':
+        // baris MEDIA: dihapus server & diganti kartu unduh
+        patchLast((m) => ({ ...m, content: e.data.content, files: e.data.files }));
+        break;
       case 'done':
         patchLast((m) => ({
           ...m,
