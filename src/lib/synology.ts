@@ -32,9 +32,15 @@ export interface AttachmentRef {
   size?: number;
   truncated?: boolean;
   /** synology = file, folder = daftar isi folder, knowledge = potongan dari basis pengetahuan */
-  source?: 'synology' | 'folder' | 'knowledge';
-  /** saat memilih: file tunggal atau seluruh folder */
-  kind?: 'file' | 'folder';
+  source?: 'synology' | 'folder' | 'knowledge' | 'upload';
+  /** saat memilih: file Synology, folder Synology, atau file yang diunggah dari komputer */
+  kind?: 'file' | 'folder' | 'upload';
+  /** upload dari komputer: id di server (terisi setelah selesai), progres 0–100, error */
+  uploadId?: string;
+  progress?: number;
+  error?: string;
+  /** upload: teksnya bisa dibaca AI */
+  readable?: boolean;
 }
 
 export interface FolderPreview {

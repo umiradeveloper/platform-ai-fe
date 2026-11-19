@@ -16,6 +16,8 @@ const nextConfig = {
   poweredByHeader: false,
   // Kompresi dimatikan agar SSE streaming tidak ter-buffer saat melewati proxy Next.
   compress: false,
+  // upload file dari komputer (maks. 25 MB per file) ikut lewat proxy /api pada mode tanpa NEXT_PUBLIC_API_URL
+  experimental: { middlewareClientMaxBodySize: '30mb' },
   async rewrites() {
     return DIRECT ? [] : [{ source: '/api/:path*', destination: `${PROXY_TARGET}/api/:path*` }];
   },

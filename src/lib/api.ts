@@ -20,6 +20,11 @@ let accessToken: string | null = null;
 let refreshing: Promise<boolean> | null = null;
 const listeners = new Set<(u: User | null) => void>();
 
+/** Token akses saat ini (untuk XHR upload dengan progres). */
+export function getAccessToken() {
+  return accessToken;
+}
+
 export function setSession(token: string | null, user?: User | null) {
   accessToken = token;
   if (user !== undefined) listeners.forEach((l) => l(user));

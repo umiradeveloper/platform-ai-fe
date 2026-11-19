@@ -213,12 +213,13 @@ export function ChatView({ conversationId }: { conversationId?: string }) {
   function send(text: string, files: AttachmentRef[] = [], opts: { useKnowledge?: boolean } = {}) {
     // modelId boleh null (daftar model belum termuat) — backend memakai model default.
     if (modelId) localStorage.setItem(MODEL_KEY, modelId);
-    setMessages((prev) => [...prev, { id: `tmp-u-${Date.now()}`, role: 'USER', content: text, attachments: files.map((f) => (f.kind === 'folder' ? { ...f, source: 'folder' as const } : f)) }]);
+    setMessages((prev) => [...prev, { id: `tmp-u-${Date.now()}`, role: 'USER', content: text, attachments: files.map((f) => (f.kind === 'folder' ? { ...f, source: 'folder' as const } : f.kind === 'upload' ? { ...f, path: `upload:${f.uploadId}`, source: 'upload' as const } : f)) }]);
     run('/chat/completions/stream', {
       conversationId: convRef.current,
       content: text,
       modelId: modelId ?? undefined,
-      synologyFiles: files.some((f) => f.kind !== 'folder') ? files.filter((f) => f.kind !== 'folder').map((f) => f.path) : undefined,
+      synologyFiles: files.some((f) => f.kind === 'file' || !f.kind) ? files.filter((f) => f.kind === 'file' || !f.kind).map((f) => f.path) : undefined,
+      uploadIds: files.some((f) => f.kind === 'upload' && f.uploadId) ? files.filter((f) => f.kind === 'upload' && f.uploadId).map((f) => f.uploadId!) : undefined,
       synologyFolders: files.some((f) => f.kind === 'folder') ? files.filter((f) => f.kind === 'folder').map((f) => f.path) : undefined,
       useKnowledge: opts.useKnowledge || undefined,
     });

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { AlertTriangle, Check, ChevronDown, Copy, Download, FileText, Folder, HardDriveUpload, Library, Loader2, RefreshCw, Wrench } from 'lucide-react';
+import { AlertTriangle, Check, ChevronDown, Copy, Download, FileText, Folder, HardDriveUpload, Library, Loader2, RefreshCw, Upload, Wrench } from 'lucide-react';
 import { toast } from 'sonner';
 import { useChatStore } from '@/lib/chat-store';
 import { AttachmentRef, fmtSize, synoErrorCode, synology } from '@/lib/synology';
@@ -13,6 +13,7 @@ import type { ToolEvent } from '@/lib/stream';
 import type { GeneratedFile } from '@/lib/files';
 import { GeneratedFiles } from './generated-files';
 import { files as filesApi } from '@/lib/files';
+import { uploads } from '@/lib/uploads';
 
 export interface UIMessage {
   id: string;
@@ -140,7 +141,8 @@ function AttachmentChips({ items }: { items: AttachmentRef[] }) {
   const download = async (a: AttachmentRef) => {
     setDl(a.path);
     try {
-      await filesApi.downloadFromSynology(a.path, a.name);
+      if (a.source === 'upload' || a.path.startsWith('upload:')) await uploads.download(a.path.slice('upload:'.length), a.name);
+      else await filesApi.downloadFromSynology(a.path, a.name);
     } catch (e: any) {
       toast.error(synoErrorCode(e) === 'not_connected' || synoErrorCode(e) === 'session_expired' ? 'Hubungkan ulang akun Synology di halaman Profil untuk mengunduh.' : e.message);
     } finally {
@@ -172,9 +174,9 @@ function AttachmentChips({ items }: { items: AttachmentRef[] }) {
               key={a.path}
               onClick={() => download(a)}
               className={cn(chip, 'group/chip hover:border-primary/40 hover:bg-muted')}
-              title={`Unduh ${a.path}${a.truncated ? ' (isi untuk AI terpotong karena panjang)' : ''}`}
+              title={`Unduh ${a.source === 'upload' ? a.name : a.path}${a.truncated ? ' (isi untuk AI terpotong karena panjang)' : ''}`}
             >
-              <FileText className="h-3.5 w-3.5 shrink-0 text-primary" />
+              {a.source === 'upload' ? <Upload className="h-3.5 w-3.5 shrink-0 text-copper-500" /> : <FileText className="h-3.5 w-3.5 shrink-0 text-primary" />}
               <span className="truncate">{a.name}</span>
               {!!a.size && <span className="shrink-0 text-muted-foreground">{fmtSize(a.size)}</span>}
               <DlIcon a={a} />
